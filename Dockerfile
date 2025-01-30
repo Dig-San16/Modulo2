@@ -1,47 +1,53 @@
-# Define a imagem base com Python 3.12
+# Base Python 3.12
 FROM python:3.12-slim as python-base
 
-# Configuração de variáveis de ambiente para Python, pip e Poetry
+# Configurações de ambiente
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_VERSION=1.6.1 \
+    POETRY_VERSION=1.8.2 \
     POETRY_HOME="/opt/poetry" \
-    PATH="/opt/poetry/bin:$PATH" \
-    PYSETUP_PATH="/opt/pysetup"
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1 \
+    PYSETUP_PATH="/opt/pysetup" \
+    VENV_PATH="/opt/pysetup/.venv"
 
-# Atualiza pacotes e instala dependências de sistema
-RUN apt-get update && apt-get install --no-install-recommends -y \
-    curl \
-    build-essential \
-    libpq-dev \
-    gcc \
+# Adiciona o Poetry e o ambiente virtual ao PATH
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+
+# Instalar dependências do sistema
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        curl build-essential libpq-dev gcc python3-distutils python3-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala o Poetry e verifica a versão
-RUN curl -sSL https://install.python-poetry.org | python - \
-    && $POETRY_HOME/bin/poetry --version
+# Instalar Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && poetry --version
 
-# Define o diretório de trabalho para instalar dependências
+# Criar diretório de trabalho para dependências
 WORKDIR $PYSETUP_PATH
 
-# Copia os arquivos de dependências do projeto
-COPY poetry.lock pyproject.toml ./
+# Copiar arquivos de dependência
+COPY pyproject.toml poetry.lock ./
 
-# Instala as dependências de produção
-RUN $POETRY_HOME/bin/poetry install --no-root --no-dev
+# Regenerar o arquivo poetry.lock
+RUN poetry lock
 
-# Define o diretório de trabalho para o código da aplicação
+# Instalar dependências do projeto sem as de desenvolvimento
+RUN poetry install --no-dev --no-root
+
+# Configurar diretório de trabalho para a aplicação
 WORKDIR /app
 
-# Copia os arquivos do projeto para o container
+# Copiar os arquivos do projeto
 COPY . /app/
 
-# Expõe a porta usada pela aplicação
+# Expor porta da aplicação
 EXPOSE 8000
 
-# Comando para rodar o servidor Django
+# Rodar aplicação
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
