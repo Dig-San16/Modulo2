@@ -15,7 +15,7 @@ psycopg2-binary = "^2.9.10"
 autopep8 = "^1.6.0"
 isort = "^5.10.1"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
 factory-boy = "^3.2.0"
 
