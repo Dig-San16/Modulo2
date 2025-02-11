@@ -1,65 +1,53 @@
-# `python-base` sets up all our shared environment variables
-FROM python:3.8.1-slim as python-base
+# Base Python 3.12
+FROM python:3.12-slim as python-base
 
-    # python
+# Configurações de ambiente
 ENV PYTHONUNBUFFERED=1 \
-    # prevents python creating .pyc files
     PYTHONDONTWRITEBYTECODE=1 \
-    \
-    # pip
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    \
-    # poetry
-    # https://python-poetry.org/docs/configuration/#using-environment-variables
-    POETRY_VERSION=1.0.3 \
-    # make poetry install to this location
+    POETRY_VERSION=1.8.2 \
     POETRY_HOME="/opt/poetry" \
-    # make poetry create the virtual environment in the project's root
-    # it gets named `.venv`
     POETRY_VIRTUALENVS_IN_PROJECT=true \
-    # do not ask any interactive question
     POETRY_NO_INTERACTION=1 \
-    \
-    # paths
-    # this is where our requirements + virtual environment will live
     PYSETUP_PATH="/opt/pysetup" \
     VENV_PATH="/opt/pysetup/.venv"
 
-
-# prepend poetry and venv to path
+# Adiciona o Poetry e o ambiente virtual ao PATH
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
+# Instalar dependências do sistema
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-        # deps for installing poetry
-        curl \
-        # deps for building python deps
-        build-essential
+        curl build-essential libpq-dev gcc python3-distutils python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+# Instalar Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && poetry --version
 
-RUN apt-get update \
-    && apt-get -y install libpq-dev gcc \
-    && pip install psycopg2
-
-# copy project requirement files here to ensure they will be cached.
+# Criar diretório de trabalho para dependências
 WORKDIR $PYSETUP_PATH
-COPY poetry.lock pyproject.toml ./
 
-# install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
-RUN poetry install --no-dev
+# Copiar arquivos de dependência
+COPY pyproject.toml poetry.lock ./
 
-# quicker install as runtime deps are already installed
-RUN poetry install
+# Regenerar o arquivo poetry.lock
+RUN poetry lock
 
+# Instalar dependências do projeto sem as de desenvolvimento
+RUN poetry install --no-dev --no-root
+
+# Configurar diretório de trabalho para a aplicação
 WORKDIR /app
 
+# Copiar os arquivos do projeto
 COPY . /app/
 
+# Expor porta da aplicação
 EXPOSE 8000
 
+# Rodar aplicação
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
