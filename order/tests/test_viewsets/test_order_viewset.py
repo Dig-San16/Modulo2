@@ -38,7 +38,7 @@ class TestOrderViewSet(APITestCase):
             order_data["results"][0]["product"][0]["active"], self.product.active
         )
         self.assertEqual(
-            order_data["results"][0]["product"][0]["categories"][0]["title"],
+            order_data["results"][0]["product"][0]["category"][0]["title"],
             self.category.title,
         )
 

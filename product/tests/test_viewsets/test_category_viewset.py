@@ -38,4 +38,3 @@ class CategoryViewSet(APITestCase):
         created_category = Category.objects.get(title="technology")
 
         self.assertEqual(created_category.title, "technology")
-        
