@@ -48,7 +48,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -77,10 +76,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "bookstore.wsgi.application"
-
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Database
@@ -155,11 +150,10 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-# SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# DEBUG = int(os.environ.get("DEBUG", default=0))
+DEBUG = int(os.environ.get("DEBUG", default=0))
 
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ebac-bookstore-api.herokuapp.com']
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
